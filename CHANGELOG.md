@@ -30,3 +30,8 @@ This repository did not start inside git during the original modding session. Th
 
 - Added seam-wrapped route visuals and plane wrapping for long map-edge crossings
 - Published the repository with public-facing documentation and a technical manual
+
+## v0.5.1
+
+- Added detailed seam-wrap diagnostics to `BepInEx/LogOutput.log`
+- Logged map bounds, route endpoints, wrap shifts, path transforms, and generated anchors to diagnose bad spline placement

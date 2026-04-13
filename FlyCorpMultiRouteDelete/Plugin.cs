@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Threading;
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using GameLogic;
@@ -26,7 +27,7 @@ public sealed class Plugin : BasePlugin
 {
     public const string PluginGuid = "com.spaceviking.flycorp.multi-route-delete";
     public const string PluginName = "FlyCorp Multi Route Delete";
-    public const string PluginVersion = "0.5.0";
+    public const string PluginVersion = "0.5.1";
 
     private static readonly bool EnableStartupFeedback = true;
     private static readonly bool EnableRouteSeamWrap = true;
@@ -43,9 +44,11 @@ public sealed class Plugin : BasePlugin
     private static readonly HashSet<string> QueuedRouteIds = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, RouteItemState> RouteItemStates = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, WrappedRouteVisualState> WrappedRouteStates = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, string> SeamWrapDiagnosticSignatures = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object QueueLock = new();
 
     private static ManualLogSource? _log;
+    private static ConfigEntry<bool>? _seamWrapDiagnosticsEntry;
     private static RoutesStats? _activeRoutesStats;
     private static BatchRunner? _runner;
     private static TextMeshProUGUI? _selectionStatusLabel;
@@ -78,6 +81,11 @@ public sealed class Plugin : BasePlugin
     public override void Load()
     {
         _log = Log;
+        _seamWrapDiagnosticsEntry = Config.Bind(
+            "Debug",
+            "EnableSeamWrapDiagnostics",
+            true,
+            "Enable detailed seam-wrap diagnostics in BepInEx/LogOutput.log. Useful when wrapped routes render in the wrong place.");
         EnsureRunner();
 
         var harmony = new Harmony(PluginGuid);
@@ -114,7 +122,9 @@ public sealed class Plugin : BasePlugin
 
         Log.LogInfo(
             "Loaded. Open the Routes tab, use the Select toggle on each route row, then use Delete Selected or Delete All to batch-sell routes through the game's normal route-sale flow. " +
-            "Bulk route deletes use an 80% refund override. A startup confirmation dialog will appear shortly.");
+            "Bulk route deletes use an 80% refund override. Seam-wrap diagnostics are currently " +
+            (IsSeamWrapDiagnosticsEnabled() ? "enabled" : "disabled") +
+            ". A startup confirmation dialog will appear shortly.");
     }
 
     private static void Patch(Harmony harmony, System.Reflection.MethodInfo? target, string? prefix = null, string? postfix = null)
@@ -993,15 +1003,27 @@ public sealed class Plugin : BasePlugin
         if (route == null || route.Pointer == IntPtr.Zero)
             return;
 
+        var routeId = GetRouteId(route) ?? "unknown";
+
         if (!TryEnsureMapBounds(out var minX, out var maxX, out var minY, out var maxY))
+        {
+            LogSeamWrapDiagnostic(routeId, "bounds-missing",
+                $"Route {DescribeRoute(route)} [{routeId}] could not calculate map bounds; seam wrap skipped.");
             return;
+        }
 
         if (!TryGetRouteEndpoints(route, out var start, out var end))
+        {
+            LogSeamWrapDiagnostic(routeId, "endpoints-missing",
+                $"Route {DescribeRoute(route)} [{routeId}] could not resolve endpoint coordinates; seam wrap skipped.");
             return;
+        }
 
         var shiftX = ComputeWrapShift(start.x, end.x, maxX - minX);
         if (Mathf.Approximately(shiftX, 0f))
         {
+            LogSeamWrapDiagnostic(routeId, "no-wrap",
+                $"Route {DescribeRoute(route)} [{routeId}] does not need seam wrap. Start={FormatVector(start)} End={FormatVector(end)} Width={_mapWidth:F3} DeltaX={(end.x - start.x):F3}");
             CleanupWrappedRoute(route);
             return;
         }
@@ -1009,12 +1031,10 @@ public sealed class Plugin : BasePlugin
         var primaryStart = new Vector3(start.x, start.y, 0f);
         var primaryEnd = new Vector3(end.x + shiftX, end.y, 0f);
         var primaryPaths = CollectRoutePathCreators(route);
-        foreach (var pathCreator in primaryPaths)
-            ApplyWrappedBezierPath(pathCreator, primaryStart, primaryEnd, minY, maxY);
-
-        var routeId = GetRouteId(route);
-        if (routeId == null)
-            return;
+        LogSeamWrapDiagnostic(routeId, "route",
+            $"Route {DescribeRoute(route)} [{routeId}] wrap requested. Start={FormatVector(start)} End={FormatVector(end)} PrimaryStart={FormatVector(primaryStart)} PrimaryEnd={FormatVector(primaryEnd)} ShiftX={shiftX:F3} BoundsX=[{minX:F3}, {maxX:F3}] BoundsY=[{minY:F3}, {maxY:F3}] RouteTransform={DescribeTransform(route.transform)}");
+        for (var i = 0; i < primaryPaths.Count; i++)
+            ApplyWrappedBezierPath(primaryPaths[i], primaryStart, primaryEnd, minY, maxY, routeId, $"primary[{i}]");
 
         var state = GetOrCreateWrappedRouteState(routeId, route, shiftX);
         state.Route = route;
@@ -1027,7 +1047,7 @@ public sealed class Plugin : BasePlugin
             if (mirrorPath != null && mirrorPath.Pointer != IntPtr.Zero)
             {
                 var mirrorOffset = new Vector3(-shiftX, 0f, 0f);
-                ApplyWrappedBezierPath(mirrorPath, primaryStart + mirrorOffset, primaryEnd + mirrorOffset, minY, maxY);
+                ApplyWrappedBezierPath(mirrorPath, primaryStart + mirrorOffset, primaryEnd + mirrorOffset, minY, maxY, routeId, "mirror");
             }
         }
         else
@@ -1213,7 +1233,7 @@ public sealed class Plugin : BasePlugin
         return null;
     }
 
-    private static void ApplyWrappedBezierPath(PathCreator? pathCreator, Vector3 start, Vector3 end, float minY, float maxY)
+    private static void ApplyWrappedBezierPath(PathCreator? pathCreator, Vector3 start, Vector3 end, float minY, float maxY, string? routeId = null, string? pathLabel = null)
     {
         if (pathCreator == null || pathCreator.Pointer == IntPtr.Zero)
             return;
@@ -1237,6 +1257,18 @@ public sealed class Plugin : BasePlugin
         }
 
         pathCreator.bezierPath = bezierPath;
+
+        if (!string.IsNullOrWhiteSpace(routeId))
+        {
+            var transform = pathCreator.transform;
+            var worldAnchors = string.Join(", ", anchors.Select(FormatVector));
+            var localAnchors = transform == null
+                ? "n/a"
+                : string.Join(", ", anchors.Select(anchor => FormatVector(anchor - transform.position)));
+
+            LogSeamWrapDiagnostic(routeId!, $"path-{pathLabel ?? GetObjectId(pathCreator)}",
+                $"Route [{routeId}] applied wrap path to {pathLabel ?? "path"} {DescribePathCreator(pathCreator)} Space={pathSpace} WorldAnchors=[{worldAnchors}] LocalFromTransform=[{localAnchors}]");
+        }
     }
 
     private static List<Vector3> BuildRouteAnchors(Vector3 start, Vector3 end, float minY, float maxY)
@@ -1332,6 +1364,7 @@ public sealed class Plugin : BasePlugin
         var maxX = float.MinValue;
         var minY = float.MaxValue;
         var maxY = float.MinValue;
+        var totalPoints = 0;
 
         void Accumulate(Il2CppSystem.Collections.Generic.List<City>? cities)
         {
@@ -1345,6 +1378,7 @@ public sealed class Plugin : BasePlugin
                     continue;
 
                 hasPoint = true;
+                totalPoints++;
                 minX = Mathf.Min(minX, location.x);
                 maxX = Mathf.Max(maxX, location.x);
                 minY = Mathf.Min(minY, location.y);
@@ -1372,6 +1406,9 @@ public sealed class Plugin : BasePlugin
         _mapWidth = maxX - minX;
         _mapHeight = Mathf.Max(1f, maxY - minY);
         _mapBoundsInitialized = _mapWidth > 0f;
+
+        LogSeamWrapDiagnostic("map", "bounds",
+            $"Map bounds recalculated from {totalPoints} city points. X=[{_mapMinX:F3}, {_mapMaxX:F3}] Y=[{_mapMinY:F3}, {_mapMaxY:F3}] Width={_mapWidth:F3} Height={_mapHeight:F3}");
     }
 
     private static void TryApplyBulkRefundOverride(RouteInfoUIController routeInfoUi)
@@ -1754,9 +1791,46 @@ public sealed class Plugin : BasePlugin
         LogInfo("Bulk refund override could not resolve the game's refund fields. Batch deletes will use vanilla refunds.");
     }
 
+    private static bool IsSeamWrapDiagnosticsEnabled() => _seamWrapDiagnosticsEntry?.Value ?? true;
+
     private static void LogInfo(string message) => _log?.LogInfo(message);
 
     private static void LogError(string message, Exception ex) => _log?.LogError($"{message}: {ex}");
+
+    private static void LogSeamWrapDiagnostic(string scope, string category, string message)
+    {
+        if (!IsSeamWrapDiagnosticsEnabled())
+            return;
+
+        var key = $"{scope}:{category}";
+        if (SeamWrapDiagnosticSignatures.TryGetValue(key, out var previousMessage) &&
+            string.Equals(previousMessage, message, StringComparison.Ordinal))
+            return;
+
+        SeamWrapDiagnosticSignatures[key] = message;
+        LogInfo($"[SeamWrap] {message}");
+    }
+
+    private static string DescribePathCreator(PathCreator? pathCreator)
+    {
+        if (pathCreator == null || pathCreator.Pointer == IntPtr.Zero)
+            return "PathCreator(null)";
+
+        return $"PathCreator[{GetObjectId(pathCreator)}] Name='{pathCreator.name}' Transform={DescribeTransform(pathCreator.transform)}";
+    }
+
+    private static string DescribeTransform(Transform? transform)
+    {
+        if (transform == null)
+            return "Transform(null)";
+
+        var parentName = transform.parent == null ? "null" : transform.parent.name;
+        return $"Name='{transform.name}' Pos={FormatVector(transform.position)} LocalPos={FormatVector(transform.localPosition)} Scale={FormatVector(transform.localScale)} Parent='{parentName}'";
+    }
+
+    private static string FormatVector(Vector2 value) => $"({value.x:F3}, {value.y:F3})";
+
+    private static string FormatVector(Vector3 value) => $"({value.x:F3}, {value.y:F3}, {value.z:F3})";
 
     private static void ScheduleStartupFeedback()
     {

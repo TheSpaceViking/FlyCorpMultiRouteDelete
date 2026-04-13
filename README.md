@@ -4,7 +4,7 @@
 
 ## Current Release
 
-- Version: `0.5.0`
+- Version: `0.5.1`
 - Target game: Fly Corp
 - Target Unity runtime: `2022.3.62f2`
 - Target mod loader: `BepInEx 6 IL2CPP`
@@ -17,6 +17,7 @@
 - `80%` refund override for mod-driven bulk deletes
 - One-time startup confirmation dialog so the player can verify the mod loaded
 - Seam-wrapped route visuals for long left/right-edge crossings such as `Los Angeles - Tokyo`
+- Temporary seam-wrap diagnostics written to `BepInEx/LogOutput.log` to debug route placement issues
 
 ## How It Works
 
