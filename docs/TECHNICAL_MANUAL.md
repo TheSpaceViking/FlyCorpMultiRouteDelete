@@ -57,7 +57,7 @@ Important interop assemblies:
 
 - `PluginGuid`: `com.spaceviking.flycorp.multi-route-delete`
 - `PluginName`: `FlyCorp Multi Route Delete`
-- `PluginVersion`: `0.5.2`
+- `PluginVersion`: `0.5.3`
 
 ### Harmony Patch Surface
 
@@ -201,7 +201,9 @@ The diagnostics currently log:
 
 This is intended to expose whether the wrap spline is being assigned in the wrong coordinate space.
 
-Version `0.5.2` also changes the wrap implementation to assign spline anchors in the `PathCreator`'s local space using `Transform.InverseTransformPoint`.
+Version `0.5.2` changes the wrap implementation to assign spline anchors in the `PathCreator`'s local space using `Transform.InverseTransformPoint`.
+
+Version `0.5.3` corrects spline construction by using `BezierPath(IEnumerable<Vector3>, bool, PathSpace)` for the full anchor list instead of the center-point constructor.
 
 ## Build Workflow
 
@@ -233,3 +235,4 @@ Published milestone sequence in this repo:
 - `v0.5.0`: seam-wrapped route visuals
 - `v0.5.1`: seam-wrap diagnostics
 - `v0.5.2`: local-space seam-wrap spline fix
+- `v0.5.3`: proper BezierPath anchor-list constructor

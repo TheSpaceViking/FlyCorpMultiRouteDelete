@@ -27,7 +27,7 @@ public sealed class Plugin : BasePlugin
 {
     public const string PluginGuid = "com.spaceviking.flycorp.multi-route-delete";
     public const string PluginName = "FlyCorp Multi Route Delete";
-    public const string PluginVersion = "0.5.2";
+    public const string PluginVersion = "0.5.3";
 
     private static readonly bool EnableStartupFeedback = true;
     private static readonly bool EnableRouteSeamWrap = true;
@@ -1249,9 +1249,12 @@ public sealed class Plugin : BasePlugin
             ? worldAnchors
             : worldAnchors.Select(anchor => transform.InverseTransformPoint(anchor)).ToList();
 
-        var bezierPath = new BezierPath(pathAnchors[0], false, pathSpace);
-        for (var i = 1; i < pathAnchors.Count; i++)
-            bezierPath.AddSegmentToEnd(pathAnchors[i]);
+        var il2CppAnchors = new Il2CppSystem.Collections.Generic.List<Vector3>();
+        foreach (var anchor in pathAnchors)
+            il2CppAnchors.Add(anchor);
+
+        var il2CppAnchorEnumerable = new Il2CppSystem.Collections.Generic.IEnumerable<Vector3>(il2CppAnchors.Pointer);
+        var bezierPath = new BezierPath(il2CppAnchorEnumerable, false, pathSpace);
 
         if (existingPath != null && existingPath.Pointer != IntPtr.Zero)
         {

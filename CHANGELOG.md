@@ -40,3 +40,8 @@ This repository did not start inside git during the original modding session. Th
 
 - Fixed seam-wrap spline assignment to use each `PathCreator`'s local coordinate space instead of raw world coordinates
 - Kept the temporary seam-wrap diagnostics in place for validation
+
+## v0.5.3
+
+- Fixed seam-wrap spline construction to use the `BezierPath(IEnumerable<Vector3>, bool, PathSpace)` constructor
+- Removed the incorrect center-point spline initialization that was producing long unintended arcs

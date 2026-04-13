@@ -4,7 +4,7 @@
 
 ## Current Release
 
-- Version: `0.5.2`
+- Version: `0.5.3`
 - Target game: Fly Corp
 - Target Unity runtime: `2022.3.62f2`
 - Target mod loader: `BepInEx 6 IL2CPP`
@@ -19,6 +19,7 @@
 - Seam-wrapped route visuals for long left/right-edge crossings such as `Los Angeles - Tokyo`
 - Temporary seam-wrap diagnostics written to `BepInEx/LogOutput.log` to debug route placement issues
 - Seam-wrap anchors are now converted into each `PathCreator`'s local coordinate space before assignment
+- Seam-wrap splines are built from the full anchor list using `BezierPath(IEnumerable<Vector3>, ...)` instead of the center-point constructor
 
 ## How It Works
 
