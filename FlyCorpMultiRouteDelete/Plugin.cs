@@ -27,7 +27,7 @@ public sealed class Plugin : BasePlugin
 {
     public const string PluginGuid = "com.spaceviking.flycorp.multi-route-delete";
     public const string PluginName = "FlyCorp Multi Route Delete";
-    public const string PluginVersion = "0.5.1";
+    public const string PluginVersion = "0.5.2";
 
     private static readonly bool EnableStartupFeedback = true;
     private static readonly bool EnableRouteSeamWrap = true;
@@ -1243,10 +1243,15 @@ public sealed class Plugin : BasePlugin
             ? existingPath.Space
             : PathSpace.xy;
 
-        var anchors = BuildRouteAnchors(start, end, minY, maxY);
-        var bezierPath = new BezierPath(anchors[0], false, pathSpace);
-        for (var i = 1; i < anchors.Count; i++)
-            bezierPath.AddSegmentToEnd(anchors[i]);
+        var worldAnchors = BuildRouteAnchors(start, end, minY, maxY);
+        var transform = pathCreator.transform;
+        var pathAnchors = transform == null
+            ? worldAnchors
+            : worldAnchors.Select(anchor => transform.InverseTransformPoint(anchor)).ToList();
+
+        var bezierPath = new BezierPath(pathAnchors[0], false, pathSpace);
+        for (var i = 1; i < pathAnchors.Count; i++)
+            bezierPath.AddSegmentToEnd(pathAnchors[i]);
 
         if (existingPath != null && existingPath.Pointer != IntPtr.Zero)
         {
@@ -1260,14 +1265,11 @@ public sealed class Plugin : BasePlugin
 
         if (!string.IsNullOrWhiteSpace(routeId))
         {
-            var transform = pathCreator.transform;
-            var worldAnchors = string.Join(", ", anchors.Select(FormatVector));
-            var localAnchors = transform == null
-                ? "n/a"
-                : string.Join(", ", anchors.Select(anchor => FormatVector(anchor - transform.position)));
+            var worldAnchorText = string.Join(", ", worldAnchors.Select(FormatVector));
+            var localAnchorText = string.Join(", ", pathAnchors.Select(FormatVector));
 
             LogSeamWrapDiagnostic(routeId!, $"path-{pathLabel ?? GetObjectId(pathCreator)}",
-                $"Route [{routeId}] applied wrap path to {pathLabel ?? "path"} {DescribePathCreator(pathCreator)} Space={pathSpace} WorldAnchors=[{worldAnchors}] LocalFromTransform=[{localAnchors}]");
+                $"Route [{routeId}] applied wrap path to {pathLabel ?? "path"} {DescribePathCreator(pathCreator)} Space={pathSpace} WorldAnchors=[{worldAnchorText}] PathLocalAnchors=[{localAnchorText}]");
         }
     }
 

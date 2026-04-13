@@ -57,7 +57,7 @@ Important interop assemblies:
 
 - `PluginGuid`: `com.spaceviking.flycorp.multi-route-delete`
 - `PluginName`: `FlyCorp Multi Route Delete`
-- `PluginVersion`: `0.5.1`
+- `PluginVersion`: `0.5.2`
 
 ### Harmony Patch Surface
 
@@ -187,7 +187,7 @@ Current setting:
 
 ## Seam-Wrap Diagnostics
 
-Version `0.5.1` adds targeted seam-wrap diagnostics to `BepInEx/LogOutput.log`.
+Versions `0.5.1+` add targeted seam-wrap diagnostics to `BepInEx/LogOutput.log`.
 
 The diagnostics currently log:
 
@@ -200,6 +200,8 @@ The diagnostics currently log:
 - the same anchor positions expressed relative to the path transform
 
 This is intended to expose whether the wrap spline is being assigned in the wrong coordinate space.
+
+Version `0.5.2` also changes the wrap implementation to assign spline anchors in the `PathCreator`'s local space using `Transform.InverseTransformPoint`.
 
 ## Build Workflow
 
@@ -230,3 +232,4 @@ Published milestone sequence in this repo:
 - `v0.4.2`: `80%` refund override
 - `v0.5.0`: seam-wrapped route visuals
 - `v0.5.1`: seam-wrap diagnostics
+- `v0.5.2`: local-space seam-wrap spline fix
