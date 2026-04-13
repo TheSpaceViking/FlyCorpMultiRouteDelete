@@ -25,3 +25,8 @@ This repository did not start inside git during the original modding session. Th
 ## v0.4.2
 
 - Raised the mod-driven bulk delete refund to `80%`
+
+## v0.5.0
+
+- Added seam-wrapped route visuals and plane wrapping for long map-edge crossings
+- Published the repository with public-facing documentation and a technical manual

@@ -1,51 +1,71 @@
 # FlyCorp Multi Route Delete
 
-Fly Corp mod that adds an in-game workflow for deleting more than one route at a time while still using the game's normal single-route sale path.
+`FlyCorp Multi Route Delete` is a BepInEx 6 IL2CPP mod for Fly Corp that adds batch route deletion, a route-management workflow inside `Statistics -> Routes`, an `80%` bulk refund override for mod-driven clears, and seam-wrapped visuals for long trans-Pacific routes.
 
-## Status
+## Current Release
 
-- Current repository milestone: `v0.4.2` reconstructed bulk-refund override release
-- Game target: Fly Corp on Windows
-- Mod loader target: BepInEx 6 IL2CPP
+- Version: `0.5.0`
+- Target game: Fly Corp
+- Target Unity runtime: `2022.3.62f2`
+- Target mod loader: `BepInEx 6 IL2CPP`
 
-## Features In This Milestone
+## Features
 
-- Multi-route delete workflow exposed in `Statistics -> Routes`
-- Per-row `Select` toggles for choosing routes
-- `Delete Selected`, `Delete All`, and `Clear` controls inside the routes tab
-- Batched route sale processing to reduce long stalls during large deletes
-- Batch sale execution still driven through Fly Corp's route sale logic
-- Mod-driven bulk route deletes override the refund to `80%`
-- One-time startup confirmation dialog after the game initializes
+- Batch route deletion inside `Statistics -> Routes`
+- Per-row `Select` toggles plus `Delete Selected`, `Delete All`, and `Clear`
+- Batched route sale execution to reduce long stalls during large clears
+- `80%` refund override for mod-driven bulk deletes
+- One-time startup confirmation dialog so the player can verify the mod loaded
+- Seam-wrapped route visuals for long left/right-edge crossings such as `Los Angeles - Tokyo`
 
-## Build
+## How It Works
 
-Populate the local dependency folders described in [deps/README.md](/mnt/h/My%20Repo/FlyCorpMod/deps/README.md), then run:
+- The route-management UI is injected into Fly Corp's existing `RoutesStats` screen.
+- Each route in a batch is still sold by driving Fly Corp's normal route-sale path.
+- The mod applies an `80%` override only for mod-driven bulk deletions.
+- Long seam-crossing routes get an alternate wrapped spline plus mirrored visual pathing so the route follows the short edge-crossing path on the world map.
+
+## Build Requirements
+
+This repository does not commit BepInEx binaries, Fly Corp interop DLLs, or a local .NET SDK. Populate the local dependency folders described in [deps/README.md](deps/README.md) first.
+
+Build with a system SDK:
 
 ```bash
 dotnet build FlyCorpMultiRouteDelete/FlyCorpMultiRouteDelete.csproj -c Release
 ```
 
-If you use a local SDK bootstrap inside `deps/dotnet`, this also works:
+Or with a locally bootstrapped SDK:
 
 ```bash
 ./deps/dotnet/dotnet build FlyCorpMultiRouteDelete/FlyCorpMultiRouteDelete.csproj -c Release
 ```
 
+Output DLL:
+
+`FlyCorpMultiRouteDelete/bin/Release/netstandard2.1/FlyCorpMultiRouteDelete.dll`
+
 ## Install
 
 1. Install `BepInEx 6 IL2CPP` into the Fly Corp game folder.
-2. Launch the game once so BepInEx can generate IL2CPP interop assemblies.
-3. Build the project.
+2. Launch Fly Corp once so BepInEx generates the IL2CPP interop assemblies.
+3. Build this project.
 4. Copy `FlyCorpMultiRouteDelete.dll` into `BepInEx/plugins`.
 5. Launch Fly Corp from Steam.
-6. Open `Statistics -> Routes` and use the route-tab controls.
+6. Confirm the startup dialog appears.
+7. Open `Statistics -> Routes` to use the batch controls.
 
 Example game path:
 
 `H:\SteamLibrary\steamapps\common\Fly Corp`
 
-## Notes
+## Repository Layout
 
-- This repository history is reconstructed. The original modding session was not tracked in git.
-- Later commits in this repo add route-tab UX refinements, the bulk refund override, and seam-wrapping route visuals.
+- `FlyCorpMultiRouteDelete/`: plugin source and project file
+- `docs/TECHNICAL_MANUAL.md`: implementation and maintenance details
+- `CHANGELOG.md`: reconstructed milestone history
+- `deps/README.md`: local dependency setup notes
+
+## History Note
+
+This repository was created after the original modding session. The milestone commits in this repo are reconstructed from the working mod, behavior notes, and release progression rather than recovered from an original git history.
