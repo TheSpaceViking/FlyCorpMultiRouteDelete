@@ -27,10 +27,10 @@ public sealed class Plugin : BasePlugin
 {
     public const string PluginGuid = "com.spaceviking.flycorp.multi-route-delete";
     public const string PluginName = "FlyCorp Multi Route Delete";
-    public const string PluginVersion = "0.5.3";
+    public const string PluginVersion = "0.5.4";
 
     private static readonly bool EnableStartupFeedback = true;
-    private static readonly bool EnableRouteSeamWrap = true;
+    private static readonly bool EnableRouteSeamWrap = false;
     private const int BatchSaleRoutesPerFrame = 8;
     private const double BulkSaleRefundMultiplier = 1.6d;
     private const int RouteWrapMaintenanceIntervalFrames = 180;
@@ -81,11 +81,15 @@ public sealed class Plugin : BasePlugin
     public override void Load()
     {
         _log = Log;
-        _seamWrapDiagnosticsEntry = Config.Bind(
-            "Debug",
-            "EnableSeamWrapDiagnostics",
-            true,
-            "Enable detailed seam-wrap diagnostics in BepInEx/LogOutput.log. Useful when wrapped routes render in the wrong place.");
+        if (EnableRouteSeamWrap)
+        {
+            _seamWrapDiagnosticsEntry = Config.Bind(
+                "Debug",
+                "EnableSeamWrapDiagnostics",
+                true,
+                "Enable detailed seam-wrap diagnostics in BepInEx/LogOutput.log. Useful when wrapped routes render in the wrong place.");
+        }
+
         EnsureRunner();
 
         var harmony = new Harmony(PluginGuid);
@@ -106,13 +110,16 @@ public sealed class Plugin : BasePlugin
             typeof(RoutesStats).GetMethod(nameof(RoutesStats.FillRoutesPanel), AccessTools.all),
             postfix: nameof(RoutesStatsFillRoutesPanelPostfix));
 
-        Patch(harmony,
-            typeof(PlaneMover).GetMethod(nameof(PlaneMover.RunTheRoute), AccessTools.all),
-            postfix: nameof(PlaneMoverRunTheRoutePostfix));
+        if (EnableRouteSeamWrap)
+        {
+            Patch(harmony,
+                typeof(PlaneMover).GetMethod(nameof(PlaneMover.RunTheRoute), AccessTools.all),
+                postfix: nameof(PlaneMoverRunTheRoutePostfix));
 
-        Patch(harmony,
-            typeof(PlaneBehavior).GetMethod(nameof(PlaneBehavior.Run), AccessTools.all),
-            postfix: nameof(PlaneBehaviorRunPostfix));
+            Patch(harmony,
+                typeof(PlaneBehavior).GetMethod(nameof(PlaneBehavior.Run), AccessTools.all),
+                postfix: nameof(PlaneBehaviorRunPostfix));
+        }
 
         Patch(harmony,
             AccessTools.Method(typeof(RouteInfoUIController), nameof(RouteInfoUIController.SellRoute), new[] { typeof(PlaneMover), typeof(bool), typeof(bool) }),
@@ -122,9 +129,8 @@ public sealed class Plugin : BasePlugin
 
         Log.LogInfo(
             "Loaded. Open the Routes tab, use the Select toggle on each route row, then use Delete Selected or Delete All to batch-sell routes through the game's normal route-sale flow. " +
-            "Bulk route deletes use an 80% refund override. Seam-wrap diagnostics are currently " +
-            (IsSeamWrapDiagnosticsEnabled() ? "enabled" : "disabled") +
-            ". A startup confirmation dialog will appear shortly.");
+            "Bulk route deletes use an 80% refund override. Seam-wrap route rendering is currently disabled. " +
+            "A startup confirmation dialog will appear shortly.");
     }
 
     private static void Patch(Harmony harmony, System.Reflection.MethodInfo? target, string? prefix = null, string? postfix = null)
@@ -1796,7 +1802,7 @@ public sealed class Plugin : BasePlugin
         LogInfo("Bulk refund override could not resolve the game's refund fields. Batch deletes will use vanilla refunds.");
     }
 
-    private static bool IsSeamWrapDiagnosticsEnabled() => _seamWrapDiagnosticsEntry?.Value ?? true;
+    private static bool IsSeamWrapDiagnosticsEnabled() => EnableRouteSeamWrap && (_seamWrapDiagnosticsEntry?.Value ?? false);
 
     private static void LogInfo(string message) => _log?.LogInfo(message);
 

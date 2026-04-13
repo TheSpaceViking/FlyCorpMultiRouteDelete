@@ -20,7 +20,7 @@ The original modding work was not tracked in git. This repository reconstructs m
 - `FlyCorpMultiRouteDelete/FlyCorpMultiRouteDelete.csproj`
   - Project file with references to BepInEx core assemblies and generated Fly Corp interop DLLs.
 - `FlyCorpMultiRouteDelete/Plugin.cs`
-  - Main plugin entrypoint, Harmony patches, UI injection, batch-sale pipeline, refund override logic, and seam-wrap behavior.
+  - Main plugin entrypoint, Harmony patches, UI injection, batch-sale pipeline, and refund override logic.
 - `deps/README.md`
   - Documents how to populate local BepInEx and Fly Corp interop dependencies.
 
@@ -57,7 +57,7 @@ Important interop assemblies:
 
 - `PluginGuid`: `com.spaceviking.flycorp.multi-route-delete`
 - `PluginName`: `FlyCorp Multi Route Delete`
-- `PluginVersion`: `0.5.3`
+- `PluginVersion`: `0.5.4`
 
 ### Harmony Patch Surface
 
@@ -67,8 +67,6 @@ The plugin patches these Fly Corp methods:
 - `RouteItem.OnDisable`
 - `RoutesStats.OnEnable`
 - `RoutesStats.FillRoutesPanel`
-- `PlaneMover.RunTheRoute`
-- `PlaneBehavior.Run`
 - `RouteInfoUIController.SellRoute(PlaneMover, bool, bool)`
 
 ### Runtime Components
@@ -77,8 +75,6 @@ The plugin patches these Fly Corp methods:
   - Hidden `MonoBehaviour` used to process queued route sales over multiple frames.
 - `RouteItemState`
   - Tracks route row UI state and selection behavior.
-- `WrappedRouteVisualState`
-  - Tracks seam-wrap state for a route, including the mirrored path object.
 - `RefundMemberBinding`
   - Reflection helper that locates and overrides the game's refund fields without hard-coding a single member path.
 
@@ -143,67 +139,16 @@ Purpose:
 - gives the player the active controls
 - avoids requiring a terminal window or build session to remain open
 
-## Seam-Wrapped Route Visuals
+## Seam-Wrap Status
 
-### Goal
+Experimental seam-wrap route rendering is disabled in `v0.5.4`.
 
-Fly Corp's world map is a left/right-wrapping projection. Some long routes visually travel the long way across Eurasia instead of crossing the map seam. The mod corrects that for long edge-crossing routes.
+Reason:
 
-### Detection
+- the route-deletion workflow is stable and shippable
+- the seam-wrap path rendering still needed more investigation than was justified for the current goal
 
-The mod:
-
-1. collects city coordinates from Fly Corp runtime data
-2. estimates world-map bounds
-3. compares the X delta between route endpoints
-4. treats the route as a seam-crossing route when the direct X delta exceeds half the map width
-
-### Path Rebuild
-
-For seam-crossing routes, the mod:
-
-- computes a wrapped X shift of one map width
-- rebuilds the route path as a new `BezierPath`
-- applies that wrapped spline to the route path creators used by the route and its planes
-
-### Mirrored Visual Path
-
-To make the path visible on both sides of the seam, the mod clones the visual path object and applies an opposite offset. The mirrored object is set to `Ignore Raycast` so it does not create extra interaction targets.
-
-### Plane Wrapping
-
-Planes on seam-crossing routes are also wrapped:
-
-- if a wrapped route moves left past the minimum X bound, the plane is shifted right by one map width
-- if a wrapped route moves right past the maximum X bound, the plane is shifted left by one map width
-
-### Maintenance Loop
-
-The mod periodically refreshes seam-wrap state so newly created routes or removed routes stay in sync.
-
-Current setting:
-
-- `RouteWrapMaintenanceIntervalFrames = 180`
-
-## Seam-Wrap Diagnostics
-
-Versions `0.5.1+` add targeted seam-wrap diagnostics to `BepInEx/LogOutput.log`.
-
-The diagnostics currently log:
-
-- recalculated map bounds and sampled city count
-- route start and end coordinates
-- computed seam-wrap shift
-- route transform details
-- each affected `PathCreator` transform
-- generated anchor positions in world space
-- the same anchor positions expressed relative to the path transform
-
-This is intended to expose whether the wrap spline is being assigned in the wrong coordinate space.
-
-Version `0.5.2` changes the wrap implementation to assign spline anchors in the `PathCreator`'s local space using `Transform.InverseTransformPoint`.
-
-Version `0.5.3` corrects spline construction by using `BezierPath(IEnumerable<Vector3>, bool, PathSpace)` for the full anchor list instead of the center-point constructor.
+The seam-wrap implementation remains in source history for future revisit, but it is not active in the current build.
 
 ## Build Workflow
 
@@ -220,8 +165,6 @@ Version `0.5.3` corrects spline construction by using `BezierPath(IEnumerable<Ve
 - `Delete Selected` removes only selected routes.
 - `Delete All` removes every route while staying reasonably responsive.
 - Batch deletes refund `80%`.
-- A route such as `Los Angeles - Tokyo` wraps across the map seam.
-- Planes on a wrapped route reappear correctly across the seam.
 
 ## Release Notes
 
@@ -236,3 +179,4 @@ Published milestone sequence in this repo:
 - `v0.5.1`: seam-wrap diagnostics
 - `v0.5.2`: local-space seam-wrap spline fix
 - `v0.5.3`: proper BezierPath anchor-list constructor
+- `v0.5.4`: seam-wrap disabled, stable route-deletion-only build

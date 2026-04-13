@@ -1,10 +1,10 @@
 # FlyCorp Multi Route Delete
 
-`FlyCorp Multi Route Delete` is a BepInEx 6 IL2CPP mod for Fly Corp that adds batch route deletion, a route-management workflow inside `Statistics -> Routes`, an `80%` bulk refund override for mod-driven clears, and seam-wrapped visuals for long trans-Pacific routes.
+`FlyCorp Multi Route Delete` is a BepInEx 6 IL2CPP mod for Fly Corp that adds batch route deletion, a route-management workflow inside `Statistics -> Routes`, and an `80%` bulk refund override for mod-driven clears.
 
 ## Current Release
 
-- Version: `0.5.3`
+- Version: `0.5.4`
 - Target game: Fly Corp
 - Target Unity runtime: `2022.3.62f2`
 - Target mod loader: `BepInEx 6 IL2CPP`
@@ -16,17 +16,14 @@
 - Batched route sale execution to reduce long stalls during large clears
 - `80%` refund override for mod-driven bulk deletes
 - One-time startup confirmation dialog so the player can verify the mod loaded
-- Seam-wrapped route visuals for long left/right-edge crossings such as `Los Angeles - Tokyo`
-- Temporary seam-wrap diagnostics written to `BepInEx/LogOutput.log` to debug route placement issues
-- Seam-wrap anchors are now converted into each `PathCreator`'s local coordinate space before assignment
-- Seam-wrap splines are built from the full anchor list using `BezierPath(IEnumerable<Vector3>, ...)` instead of the center-point constructor
+- Stable route-deletion-only build with the experimental seam-wrap route rendering disabled
 
 ## How It Works
 
 - The route-management UI is injected into Fly Corp's existing `RoutesStats` screen.
 - Each route in a batch is still sold by driving Fly Corp's normal route-sale path.
 - The mod applies an `80%` override only for mod-driven bulk deletions.
-- Long seam-crossing routes get an alternate wrapped spline plus mirrored visual pathing so the route follows the short edge-crossing path on the world map.
+- Experimental seam-wrap route rendering has been disabled for now to keep the route-deletion workflow stable.
 
 ## Build Requirements
 
