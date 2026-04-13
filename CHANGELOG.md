@@ -21,3 +21,7 @@ This repository did not start inside git during the original modding session. Th
 
 - Broke bulk route deletion into frame batches to reduce long freezes
 - Tightened up the route-tab action strip layout
+
+## v0.4.2
+
+- Raised the mod-driven bulk delete refund to `80%`
