@@ -16,3 +16,8 @@ This repository did not start inside git during the original modding session. Th
 
 - Moved the user workflow into `Statistics -> Routes`
 - Added per-row route selection plus `Delete Selected`, `Delete All`, and `Clear` actions
+
+## v0.4.1
+
+- Broke bulk route deletion into frame batches to reduce long freezes
+- Tightened up the route-tab action strip layout

@@ -26,11 +26,11 @@ public sealed class Plugin : BasePlugin
 {
     public const string PluginGuid = "com.spaceviking.flycorp.multi-route-delete";
     public const string PluginName = "FlyCorp Multi Route Delete";
-    public const string PluginVersion = "0.4.0";
+    public const string PluginVersion = "0.4.1";
 
     private const bool EnableStartupFeedback = true;
     private const bool EnableRouteSeamWrap = false;
-    private const int BatchSaleRoutesPerFrame = int.MaxValue;
+    private const int BatchSaleRoutesPerFrame = 8;
     private const double BulkSaleRefundMultiplier = 1.0d;
     private const int RouteWrapMaintenanceIntervalFrames = 180;
     private const uint MbOk = 0x00000000;
