@@ -11,3 +11,8 @@ This repository did not start inside git during the original modding session. Th
 ## v0.3.0
 
 - Added one-time startup feedback so the mod confirms it loaded after Fly Corp initializes
+
+## v0.4.0
+
+- Moved the user workflow into `Statistics -> Routes`
+- Added per-row route selection plus `Delete Selected`, `Delete All`, and `Clear` actions

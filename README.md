@@ -4,13 +4,15 @@ Fly Corp mod that adds an in-game workflow for deleting more than one route at a
 
 ## Status
 
-- Current repository milestone: `v0.3.0` reconstructed startup-feedback release
+- Current repository milestone: `v0.4.0` reconstructed routes-tab workflow release
 - Game target: Fly Corp on Windows
 - Mod loader target: BepInEx 6 IL2CPP
 
 ## Features In This Milestone
 
-- Multi-route delete workflow exposed in-game
+- Multi-route delete workflow exposed in `Statistics -> Routes`
+- Per-row `Select` toggles for choosing routes
+- `Delete Selected`, `Delete All`, and `Clear` controls inside the routes tab
 - Batch sale execution still driven through Fly Corp's route sale logic
 - One-time startup confirmation dialog after the game initializes
 
@@ -35,6 +37,7 @@ If you use a local SDK bootstrap inside `deps/dotnet`, this also works:
 3. Build the project.
 4. Copy `FlyCorpMultiRouteDelete.dll` into `BepInEx/plugins`.
 5. Launch Fly Corp from Steam.
+6. Open `Statistics -> Routes` and use the route-tab controls.
 
 Example game path:
 
