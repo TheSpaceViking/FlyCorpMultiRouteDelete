@@ -4,7 +4,7 @@ Fly Corp mod that adds an in-game workflow for deleting more than one route at a
 
 ## Status
 
-- Current repository milestone: `v0.2.0` reconstructed baseline
+- Current repository milestone: `v0.3.0` reconstructed startup-feedback release
 - Game target: Fly Corp on Windows
 - Mod loader target: BepInEx 6 IL2CPP
 
@@ -12,6 +12,7 @@ Fly Corp mod that adds an in-game workflow for deleting more than one route at a
 
 - Multi-route delete workflow exposed in-game
 - Batch sale execution still driven through Fly Corp's route sale logic
+- One-time startup confirmation dialog after the game initializes
 
 ## Build
 
@@ -42,4 +43,4 @@ Example game path:
 ## Notes
 
 - This repository history is reconstructed. The original modding session was not tracked in git.
-- Later commits in this repo add the startup feedback, route-tab UX refinements, bulk refund override, and seam-wrapping route visuals.
+- Later commits in this repo add route-tab UX refinements, the bulk refund override, and seam-wrapping route visuals.

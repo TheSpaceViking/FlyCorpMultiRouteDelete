@@ -26,9 +26,9 @@ public sealed class Plugin : BasePlugin
 {
     public const string PluginGuid = "com.spaceviking.flycorp.multi-route-delete";
     public const string PluginName = "FlyCorp Multi Route Delete";
-    public const string PluginVersion = "0.2.0";
+    public const string PluginVersion = "0.3.0";
 
-    private const bool EnableStartupFeedback = false;
+    private const bool EnableStartupFeedback = true;
     private const bool EnableRouteSeamWrap = false;
     private const int BatchSaleRoutesPerFrame = int.MaxValue;
     private const double BulkSaleRefundMultiplier = 1.0d;
@@ -113,7 +113,8 @@ public sealed class Plugin : BasePlugin
         ScheduleStartupFeedback();
 
         Log.LogInfo(
-            "Loaded. Open the Routes tab and use the multi-delete controls to batch-sell routes through the game's normal route-sale flow.");
+            "Loaded. Open the Routes tab and use the multi-delete controls to batch-sell routes through the game's normal route-sale flow. " +
+            "A startup confirmation dialog will appear shortly.");
     }
 
     private static void Patch(Harmony harmony, System.Reflection.MethodInfo? target, string? prefix = null, string? postfix = null)
